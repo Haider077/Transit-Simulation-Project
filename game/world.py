@@ -27,36 +27,69 @@ class World:
         self.temp_tile = None
 
 
+
+    def is_neighbor_of_train_station(self, x, y):
+            """Checks if the given tile is a neighbor of a train station."""
+            neighbors = self.get_neighbors(x, y)
+            for nx, ny in neighbors:
+                if self.world[nx][ny]["tile"] == "train":
+                    return True
+            return False
+
+    def is_within_train_station_radius(self, x, y, radius):
+        """Checks if the given tile is within the radius of a train station."""
+        for tx in range(self.grid_length_x):
+            for ty in range(self.grid_length_y):
+                if self.world[tx][ty]["tile"] == "train":
+                    distance = abs(x - tx) + abs(y - ty)
+                    if distance <= radius:
+                        return True
+        return False
+        
     def simulation(self):
-            new_tile = []
-            for x in range(self.grid_length_x):
-                for y in range(self.grid_length_y):
-                    if self.world[x][y]["tile"] == "building1" or self.world[x][y]["tile"] == "building2":
-                        neighbors = self.get_neighbors(x, y)
-                        for nx, ny in neighbors:
-                            if self.world[nx][ny]["tile"] == "" and random.random() < 0.2:  # 5% chance to grow
-                                new_tile.append((nx, ny))
-                            elif self.world[nx][ny]["tile"] == "farm" and random.random() < 0.20:  # 5% chance to grow
-                                new_tile.append((nx, ny))
+        new_tile = []
+        for x in range(self.grid_length_x):
+            for y in range(self.grid_length_y):
+                if (
+                    self.world[x][y]["tile"] == "building1"
+                    or self.world[x][y]["tile"] == "building2"
+                ):
+                    neighbors = self.get_neighbors(x, y)
+                    for nx, ny in neighbors:
+                        localGrowthValue = 0
+                        if self.is_within_train_station_radius(
+                            nx, ny,5
+                        ):  # Check if neighbor of train station
+                            localGrowthValue = 0.1  # Increase growth probability
 
-            for nx, ny in new_tile:
+                        if (
+                            self.world[nx][ny]["tile"] == ""
+                            and random.random() < 0 + localGrowthValue
+                        ):  # 5% chance to grow
+                            new_tile.append((nx, ny))
+                        elif (
+                            self.world[nx][ny]["tile"] == "farm"
+                            and random.random() < 0.01 + localGrowthValue * 5
+                        ):  # 5% chance to grow
+                            new_tile.append((nx, ny))
 
-                if random.random() < 0.1:
-                    self.world[nx][ny]["tile"] = "building1"
-                    self.world[nx][ny]["collision"] = True
-                elif random.random() < 0.07:
-                    self.world[nx][ny]["tile"] = "building2"
-                    self.world[nx][ny]["collision"] = True
-                elif random.random() < 0.05:
-                    self.world[nx][ny]["tile"] = "building3"
-                    self.world[nx][ny]["collision"] = True
-                elif random.random() < 0.05:
-                    self.world[nx][ny]["tile"] = "building4"
-                    self.world[nx][ny]["collision"] = True
-                
-                elif random.random() < 0.9:
-                    self.world[nx][ny]["tile"] = "farm"
-                    self.world[nx][ny]["collision"] = True
+        for nx, ny in new_tile:
+            if random.random() < 0.01:
+                self.world[nx][ny]["tile"] = "building1"
+                self.world[nx][ny]["collision"] = True
+            elif random.random() < 0.015 + localGrowthValue:
+                self.world[nx][ny]["tile"] = "building2"
+                self.world[nx][ny]["collision"] = True
+            elif random.random() < 0.005 + localGrowthValue:
+                self.world[nx][ny]["tile"] = "building3"
+                self.world[nx][ny]["collision"] = True
+            elif random.random() < 0.015 + localGrowthValue:
+                self.world[nx][ny]["tile"] = "building4"
+                self.world[nx][ny]["collision"] = True
+            elif random.random() < 0.9 - localGrowthValue * 5:
+                self.world[nx][ny]["tile"] = "farm"
+                self.world[nx][ny]["collision"] = True
+
 
     def get_neighbors(self, x, y):
         neighbors =  []
@@ -185,8 +218,10 @@ class World:
         else:
             if r == 1:
                 tile = "tree"
-            elif r == 2:
+            elif r >= 2 and r <= 10:
                 tile = "rock"
+            elif r > 10 and r < 16:
+                tile = "building1"
             else:
                 tile = ""
 
@@ -235,6 +270,7 @@ class World:
         farm = pg.image.load("assets/graphics/farms.png").convert_alpha()
         building3 = pg.image.load("assets/graphics/building02.png").convert_alpha()
         building4 = pg.image.load("assets/graphics/building04.png").convert_alpha()
+        ts = pg.image.load("assets/graphics/trainStation.png").convert_alpha()
         images = {
             "building1": building1,
             "building2": building2,
@@ -243,7 +279,8 @@ class World:
             "tree": tree,
             "rock": rock,
             "block": block,
-            "farm" : farm
+            "farm" : farm,
+            "train" : ts
         }
 
         return images

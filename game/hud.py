@@ -92,12 +92,10 @@ class Hud:
         building2 = pg.image.load("assets/graphics/building02.png")
         tree = pg.image.load("assets/graphics/tree.png")
         rock = pg.image.load("assets/graphics/rock.png")
+        ts = pg.image.load("assets/graphics/trainStation.png")
 
         images = {
-            "building1": building1,
-            "building2": building2,
-            "tree": tree,
-            "rock": rock
+            "train": ts,
         }
 
         return images

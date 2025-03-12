@@ -13,7 +13,7 @@ class Game:
         self.screen = screen
         self.clock = clock
         self.width, self.height = self.screen.get_size()
-        self.zoom_factor = 2
+        self.zoom_factor = 3
         
 
         # hud
