@@ -13,17 +13,21 @@ class Game:
         self.screen = screen
         self.clock = clock
         self.width, self.height = self.screen.get_size()
-        self.zoom_factor = 1.2
+        self.zoom_factor = 2
         
 
         # hud
         self.hud = Hud(self.width, self.height)
 
         # world
-        self.world = World(self.hud, 15, 15, self.width, self.height)
+        self.world = World(self.hud, 30, 30, self.width, self.height)
 
         # camera
         self.camera = Camera(self.width, self.height)
+
+
+        # Set initial camera position to the center of the world
+
 
     def run(self):
         self.playing = True
@@ -46,7 +50,7 @@ class Game:
     def update(self):
         self.camera.update()
         self.hud.update()
-        self.world.update(self.camera)
+        self.world.update(self.camera,self.zoom_factor)
 
     def draw(self):
         # self.screen.fill((0, 0, 0))

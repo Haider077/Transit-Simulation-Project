@@ -14,7 +14,10 @@ class World:
         self.grid_length_y = grid_length_y
         self.width = width
         self.height = height
-
+        world_width = self.grid_length_x * TILE_SIZE
+        world_height = self.grid_length_y * TILE_SIZE
+        self.map_center_x = world_width / 2
+        self.map_center_y = world_height / 2
         self.perlin_scale = grid_length_x/2
 
         self.grass_tiles = pg.Surface((grid_length_x * TILE_SIZE * 2, grid_length_y * TILE_SIZE + 2 * TILE_SIZE)).convert_alpha()
@@ -25,19 +28,35 @@ class World:
 
 
     def simulation(self):
-            new_forest = []
+            new_tile = []
             for x in range(self.grid_length_x):
                 for y in range(self.grid_length_y):
                     if self.world[x][y]["tile"] == "building1" or self.world[x][y]["tile"] == "building2":
                         neighbors = self.get_neighbors(x, y)
                         for nx, ny in neighbors:
-                            if self.world[nx][ny]["tile"] == "" and random.random() < 0.05:  # 5% chance to grow
-                                new_forest.append((nx, ny))
+                            if self.world[nx][ny]["tile"] == "" and random.random() < 0.2:  # 5% chance to grow
+                                new_tile.append((nx, ny))
+                            elif self.world[nx][ny]["tile"] == "farm" and random.random() < 0.20:  # 5% chance to grow
+                                new_tile.append((nx, ny))
 
-            for nx, ny in new_forest:
+            for nx, ny in new_tile:
 
-                self.world[nx][ny]["tile"] = "building1"
-                self.world[nx][ny]["collision"] = True
+                if random.random() < 0.1:
+                    self.world[nx][ny]["tile"] = "building1"
+                    self.world[nx][ny]["collision"] = True
+                elif random.random() < 0.07:
+                    self.world[nx][ny]["tile"] = "building2"
+                    self.world[nx][ny]["collision"] = True
+                elif random.random() < 0.05:
+                    self.world[nx][ny]["tile"] = "building3"
+                    self.world[nx][ny]["collision"] = True
+                elif random.random() < 0.05:
+                    self.world[nx][ny]["tile"] = "building4"
+                    self.world[nx][ny]["collision"] = True
+                
+                elif random.random() < 0.9:
+                    self.world[nx][ny]["tile"] = "farm"
+                    self.world[nx][ny]["collision"] = True
 
     def get_neighbors(self, x, y):
         neighbors =  []
@@ -49,7 +68,7 @@ class World:
                 if 0 <= nx < self.grid_length_x and 0 <= ny < self.grid_length_y:
                     neighbors.append((nx, ny))
         return neighbors
-    def update(self, camera):
+    def update(self, camera, zoom_factor):
 
   
 
@@ -60,7 +79,7 @@ class World:
         self.temp_tile = None
 
         current_time = time.time()
-        if current_time - self.last_growth_time >= 2:  # 60 seconds (1 minute)
+        if current_time - self.last_growth_time >= 0.5:  # 60 seconds (1 minute)
             self.simulation()
             self.last_growth_time = current_time
 
@@ -69,7 +88,7 @@ class World:
 
         if self.hud.selected_tile is not None:
 
-            grid_pos = self.mouse_to_grid(mouse_pos[0], mouse_pos[1], camera.scroll)
+            grid_pos = self.mouse_to_grid(mouse_pos[0], mouse_pos[1], camera.scroll,zoom_factor)
 
             if self.can_place_tile(grid_pos):
                 img = self.hud.selected_tile["image"].copy()
@@ -187,18 +206,22 @@ class World:
         iso_y = (x + y)/2
         return iso_x, iso_y
 
-    def mouse_to_grid(self, x, y, scroll):
+    def mouse_to_grid(self, x, y, scroll, zoom_factor):
+        # Adjust for zoom
+        world_x = x / zoom_factor
+        world_y = y / zoom_factor
+
         # transform to world position (removing camera scroll and offset)
-        world_x = x - scroll.x - self.grass_tiles.get_width()/2
-        world_y = y - scroll.y
+        world_x -= scroll.x + self.grass_tiles.get_width() / 2
+        world_y -= scroll.y
         # transform to cart (inverse of cart_to_iso)
-        cart_y = (2*world_y - world_x)/2
+        cart_y = (2 * world_y - world_x) / 2
         cart_x = cart_y + world_x
         # transform to grid coordinates
-        
+
         grid_x = int(cart_x // TILE_SIZE)
         grid_y = int(cart_y // TILE_SIZE)
-        
+
         return grid_x, grid_y
 
     def load_images(self):
@@ -209,13 +232,18 @@ class World:
         building2 = pg.image.load("assets/graphics/building02.png").convert_alpha()
         tree = pg.image.load("assets/graphics/tree.png").convert_alpha()
         rock = pg.image.load("assets/graphics/rock.png").convert_alpha()
-
+        farm = pg.image.load("assets/graphics/farms.png").convert_alpha()
+        building3 = pg.image.load("assets/graphics/building02.png").convert_alpha()
+        building4 = pg.image.load("assets/graphics/building04.png").convert_alpha()
         images = {
             "building1": building1,
             "building2": building2,
+            "building3": building3,
+            "building4": building4,
             "tree": tree,
             "rock": rock,
-            "block": block
+            "block": block,
+            "farm" : farm
         }
 
         return images
