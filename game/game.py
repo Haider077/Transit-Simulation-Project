@@ -20,7 +20,7 @@ class Game:
         self.hud = Hud(self.width, self.height)
 
         # world
-        self.world = World(self.hud, 30, 30, self.width, self.height)
+        self.world = World(self.hud, 20, 20, self.width, self.height)
 
         # camera
         self.camera = Camera(self.width, self.height)

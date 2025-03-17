@@ -53,12 +53,14 @@ class World:
                 if (
                     self.world[x][y]["tile"] == "building1"
                     or self.world[x][y]["tile"] == "building2"
+                    or self.world[x][y]["tile"] == "building3"
+                    or self.world[x][y]["tile"] == "building4"
                 ):
                     neighbors = self.get_neighbors(x, y)
                     for nx, ny in neighbors:
                         localGrowthValue = 0
                         if self.is_within_train_station_radius(
-                            nx, ny,5
+                            nx, ny,3
                         ):  # Check if neighbor of train station
                             localGrowthValue = 0.1  # Increase growth probability
 
@@ -96,7 +98,7 @@ class World:
         for dx in [-1, 0, 1]:
             for dy in [-1, 0, 1]:
                 if dx == 0 and dy == 0:
-                    continue  # Skip the cell itself
+                    continue  
                 nx, ny = x + dx, y + dy
                 if 0 <= nx < self.grid_length_x and 0 <= ny < self.grid_length_y:
                     neighbors.append((nx, ny))
@@ -268,7 +270,7 @@ class World:
         tree = pg.image.load("assets/graphics/tree.png").convert_alpha()
         rock = pg.image.load("assets/graphics/rock.png").convert_alpha()
         farm = pg.image.load("assets/graphics/farms.png").convert_alpha()
-        building3 = pg.image.load("assets/graphics/building02.png").convert_alpha()
+        building3 = pg.image.load("assets/graphics/building03.png").convert_alpha()
         building4 = pg.image.load("assets/graphics/building04.png").convert_alpha()
         ts = pg.image.load("assets/graphics/trainStation.png").convert_alpha()
         images = {
