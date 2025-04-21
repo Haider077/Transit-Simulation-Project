@@ -8,7 +8,7 @@ import time
 
 class World:
 
-    def __init__(self, hud, grid_length_x, grid_length_y, width, height):
+    def __init__(self, hud, grid_length_x, grid_length_y, width, height,map_image=None):
         self.hud = hud
         self.grid_length_x = grid_length_x
         self.grid_length_y = grid_length_y
@@ -23,6 +23,18 @@ class World:
         self.grass_tiles = pg.Surface((grid_length_x * TILE_SIZE * 2, grid_length_y * TILE_SIZE + 2 * TILE_SIZE)).convert_alpha()
         self.tiles = self.load_images()
         self.world = self.create_world()
+
+
+        # Create world either from image or procedurally
+        if map_image:
+            self.world = self.create_world_from_image(map_image)
+        else:
+            self.world = self.create_world()
+            
+        self.last_growth_time = time.time()  # Initialize growth timer
+        self.temp_tile = None
+
+
         self.last_growth_time = time.time()  # Initialize growth timer
         self.temp_tile = None
 
@@ -45,7 +57,16 @@ class World:
                     if distance <= radius:
                         return True
         return False
+    def get_distance_to_nearest_train(self, x, y):
+        min_distance = float('inf')
         
+        for tx in range(self.grid_length_x):
+            for ty in range(self.grid_length_y):
+                if self.world[tx][ty]["tile"] == "train":
+                    distance = abs(x - tx) + abs(y - ty) 
+                    min_distance = min(min_distance, distance)
+        
+        return min_distance   
     def simulation(self):
         new_tile = []
         for x in range(self.grid_length_x):
@@ -76,16 +97,16 @@ class World:
                             new_tile.append((nx, ny))
 
         for nx, ny in new_tile:
-            if random.random() < 0.01:
+            if random.random() < 0.01 :
                 self.world[nx][ny]["tile"] = "building1"
                 self.world[nx][ny]["collision"] = True
-            elif random.random() < 0.015 + localGrowthValue:
+            elif random.random() < 0.15 + localGrowthValue and self.get_distance_to_nearest_train(nx,ny) < 3:
                 self.world[nx][ny]["tile"] = "building2"
                 self.world[nx][ny]["collision"] = True
-            elif random.random() < 0.005 + localGrowthValue:
+            elif random.random() < 0.05 + localGrowthValue and self.get_distance_to_nearest_train(nx,ny) < 2:
                 self.world[nx][ny]["tile"] = "building3"
                 self.world[nx][ny]["collision"] = True
-            elif random.random() < 0.015 + localGrowthValue:
+            elif random.random() < 0.15 + localGrowthValue and self.get_distance_to_nearest_train(nx,ny) < 1:
                 self.world[nx][ny]["tile"] = "building4"
                 self.world[nx][ny]["collision"] = True
             elif random.random() < 0.9 - localGrowthValue * 5:
@@ -286,7 +307,91 @@ class World:
         }
 
         return images
+    def create_world_from_image(self, image_path):
+        """Create a world based on a PNG image where different colors represent different tile types"""
+        # Load the image
+        try:
+            map_image = pg.image.load(image_path).convert()
+        except:
+            print(f"Failed to load image: {image_path}")
+            return self.create_world()  # Fall back to procedural generation
+        
+        # Resize image to match grid dimensions if needed
+        map_image = pg.transform.scale(map_image, (self.grid_length_x, self.grid_length_y))
+        
+        # Create world array
+        world = []
+        
+        # Define color mappings (RGB to tile type)
+        # You can customize these colors based on your needs
+        color_map = {
+            (0, 0, 255): "tree",       # Green for trees/forest
+            (255, 255, 0): "farm",     # Yellow for farms
+            (100, 50, 0): "rock",      # Brown for rocks
+            (255, 0, 0): "building1",  # Red for building1
+            (200, 0, 0): "building2",  # Dark red for building2
+            (150, 0, 0): "building3",  # Darker red for building3
+            (100, 0, 0): "building4",  # Very dark red for building4
+            (0, 0, 0): "train"         # Black for train stations
+        }
+        
+        # Process each pixel in the image
+        for grid_x in range(self.grid_length_x):
+            world.append([])
+            for grid_y in range(self.grid_length_y):
+                # Get base tile data (for rendering positions etc.)
+                # Create a basic tile with default values
+                rect = [
+                    (grid_x * TILE_SIZE, grid_y * TILE_SIZE),
+                    (grid_x * TILE_SIZE + TILE_SIZE, grid_y * TILE_SIZE),
+                    (grid_x * TILE_SIZE + TILE_SIZE, grid_y * TILE_SIZE + TILE_SIZE),
+                    (grid_x * TILE_SIZE, grid_y * TILE_SIZE + TILE_SIZE)
+                ]
 
+                iso_poly = [self.cart_to_iso(x, y) for x, y in rect]
+                minx = min([x for x, y in iso_poly])
+                miny = min([y for x, y in iso_poly])
+
+                # Create the default world tile (just the block, nothing else)
+                world_tile = {
+                    "grid": [grid_x, grid_y],
+                    "cart_rect": rect,
+                    "iso_poly": iso_poly,
+                    "render_pos": [minx, miny],
+                    "tile": "",  # Default to empty
+                    "collision": False  # No collision by default
+                }
+                
+                # Get pixel color at this grid position
+                try:
+                    pixel_color = map_image.get_at((grid_x, grid_y))[:3]  # Get RGB, ignore alpha
+                except IndexError:
+                    pixel_color = (255, 255, 255)  # Default white if out of bounds
+                
+                # Find closest color in our color map
+                min_distance = float('inf')
+                matching_tile = ""
+                
+                for color, tile in color_map.items():
+                    # Calculate color distance (simple Euclidean in RGB space)
+                    distance = sum((a - b) ** 2 for a, b in zip(color, pixel_color))
+                    if distance < min_distance:
+                        min_distance = distance
+                        matching_tile = tile
+                
+                # Only use the mapped tile if it's a close enough match
+                if min_distance < 10000:  # Threshold for color matching
+                    world_tile["tile"] = matching_tile
+                    world_tile["collision"] = matching_tile != ""
+                
+                world[grid_x].append(world_tile)
+                
+                # Draw the grass tile (block) regardless
+                render_pos = world_tile["render_pos"]
+                self.grass_tiles.blit(self.tiles["block"], 
+                                    (render_pos[0] + self.grass_tiles.get_width()/2, render_pos[1]))
+        
+        return world
     def can_place_tile(self, grid_pos):
         mouse_on_panel = False
         for rect in [self.hud.resources_rect, self.hud.build_rect, self.hud.select_rect]:

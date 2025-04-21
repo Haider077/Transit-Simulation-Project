@@ -13,14 +13,14 @@ class Game:
         self.screen = screen
         self.clock = clock
         self.width, self.height = self.screen.get_size()
-        self.zoom_factor = 3
+        self.zoom_factor = 1
         
 
         # hud
         self.hud = Hud(self.width, self.height)
 
         # world
-        self.world = World(self.hud, 20, 20, self.width, self.height)
+        self.world = World(self.hud, 20, 20, self.width, self.height,"assets/graphics/map/sanJose.png")
 
         # camera
         self.camera = Camera(self.width, self.height)
