@@ -13,21 +13,13 @@ class Game:
         self.screen = screen
         self.clock = clock
         self.width, self.height = self.screen.get_size()
-        self.zoom_factor = 1
+        self.zoom_factor = 3
         
 
         # hud
         self.hud = Hud(self.width, self.height)
-
-        # world
         self.world = World(self.hud, 20, 20, self.width, self.height,"assets/graphics/map/sanJose.png")
-
-        # camera
         self.camera = Camera(self.width, self.height)
-
-
-        # Set initial camera position to the center of the world
-
 
     def run(self):
         self.playing = True
@@ -53,18 +45,11 @@ class Game:
         self.world.update(self.camera,self.zoom_factor)
 
     def draw(self):
-        # self.screen.fill((0, 0, 0))
-        # self.world.draw(self.screen, self.camera)
-        # self.hud.draw(self.screen)
-
-        # --- Scale the game world surface ---
-        game_world_surface = pg.Surface((self.width, self.height))  # Create a surface for the game world
-        self.world.draw(game_world_surface, self.camera)  # Draw the world onto the surface
-        scaled_world = pg.transform.scale(game_world_surface, (self.width * self.zoom_factor, self.height * self.zoom_factor))
-        self.screen.blit(scaled_world, (0, 0))  # Blit the scaled world surface
-
-        # --- Draw UI elements on top ---
-        self.hud.draw(self.screen)  # Draw UI elements on the original screen surface
+        game_world_surface = pg.Surface((self.width, self.height)) 
+        self.world.draw(game_world_surface, self.camera)
+        scaled_world = pg.transform.scale(game_world_surface, (self.width * self.zoom_factor, self.height * self.zoom_factor)) #controls zoom level
+        self.screen.blit(scaled_world, (0, 0)) 
+        self.hud.draw(self.screen)
 
 
         draw_text(

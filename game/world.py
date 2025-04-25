@@ -25,23 +25,22 @@ class World:
         self.world = self.create_world()
 
 
-        # Create world either from image or procedurally
+        # Check if image not null, if null use procedural map
         if map_image:
             self.world = self.create_world_from_image(map_image)
         else:
             self.world = self.create_world()
             
-        self.last_growth_time = time.time()  # Initialize growth timer
+        self.last_growth_time = time.time()
         self.temp_tile = None
 
 
-        self.last_growth_time = time.time()  # Initialize growth timer
+        self.last_growth_time = time.time()
         self.temp_tile = None
 
 
 
     def is_neighbor_of_train_station(self, x, y):
-            """Checks if the given tile is a neighbor of a train station."""
             neighbors = self.get_neighbors(x, y)
             for nx, ny in neighbors:
                 if self.world[nx][ny]["tile"] == "train":
@@ -49,7 +48,6 @@ class World:
             return False
 
     def is_within_train_station_radius(self, x, y, radius):
-        """Checks if the given tile is within the radius of a train station."""
         for tx in range(self.grid_length_x):
             for ty in range(self.grid_length_y):
                 if self.world[tx][ty]["tile"] == "train":
@@ -57,16 +55,17 @@ class World:
                     if distance <= radius:
                         return True
         return False
+    
     def get_distance_to_nearest_train(self, x, y):
         min_distance = float('inf')
-        
         for tx in range(self.grid_length_x):
             for ty in range(self.grid_length_y):
                 if self.world[tx][ty]["tile"] == "train":
                     distance = abs(x - tx) + abs(y - ty) 
                     min_distance = min(min_distance, distance)
         
-        return min_distance   
+        return min_distance
+       
     def simulation(self):
         new_tile = []
         for x in range(self.grid_length_x):
@@ -88,15 +87,17 @@ class World:
                         if (
                             self.world[nx][ny]["tile"] == ""
                             and random.random() < 0 + localGrowthValue
-                        ):  # 5% chance to grow
+                        ):  
                             new_tile.append((nx, ny))
                         elif (
                             self.world[nx][ny]["tile"] == "farm"
                             and random.random() < 0.01 + localGrowthValue * 5
-                        ):  # 5% chance to grow
+                        ):  
                             new_tile.append((nx, ny))
 
         for nx, ny in new_tile:
+
+            #density determination
             if random.random() < 0.01 :
                 self.world[nx][ny]["tile"] = "building1"
                 self.world[nx][ny]["collision"] = True
@@ -113,7 +114,7 @@ class World:
                 self.world[nx][ny]["tile"] = "farm"
                 self.world[nx][ny]["collision"] = True
 
-
+    #used to get neighbours for cellular automata
     def get_neighbors(self, x, y):
         neighbors =  []
         for dx in [-1, 0, 1]:
@@ -124,18 +125,16 @@ class World:
                 if 0 <= nx < self.grid_length_x and 0 <= ny < self.grid_length_y:
                     neighbors.append((nx, ny))
         return neighbors
+    
+
     def update(self, camera, zoom_factor):
-
-  
-
-        
         mouse_pos = pg.mouse.get_pos()
         mouse_action = pg.mouse.get_pressed()
 
         self.temp_tile = None
 
         current_time = time.time()
-        if current_time - self.last_growth_time >= 0.5:  # 60 seconds (1 minute)
+        if current_time - self.last_growth_time >= 0.5:  # 60 seconds
             self.simulation()
             self.last_growth_time = current_time
 
@@ -204,43 +203,33 @@ class World:
             )
 
     def create_world(self):
-
         world = []
-
         for grid_x in range(self.grid_length_x):
             world.append([])
             for grid_y in range(self.grid_length_y):
                 world_tile = self.grid_to_world(grid_x, grid_y)
                 world[grid_x].append(world_tile)
-
                 render_pos = world_tile["render_pos"]
                 self.grass_tiles.blit(self.tiles["block"], (render_pos[0] + self.grass_tiles.get_width()/2, render_pos[1]))
-
-
         return world
 
     def grid_to_world(self, grid_x, grid_y):
-
         rect = [
             (grid_x * TILE_SIZE, grid_y * TILE_SIZE),
             (grid_x * TILE_SIZE + TILE_SIZE, grid_y * TILE_SIZE),
             (grid_x * TILE_SIZE + TILE_SIZE, grid_y * TILE_SIZE + TILE_SIZE),
             (grid_x * TILE_SIZE, grid_y * TILE_SIZE + TILE_SIZE)
         ]
-
         iso_poly = [self.cart_to_iso(x, y) for x, y in rect]
-
         minx = min([x for x, y in iso_poly])
         miny = min([y for x, y in iso_poly])
-
         r = random.randint(1, 100)
         perlin = 100 * noise.pnoise2(grid_x/self.perlin_scale, grid_y/self.perlin_scale)
-
         if (perlin >= 15) or (perlin <= -35):
-            tile = "tree"
+            tile = "water"
         else:
             if r == 1:
-                tile = "tree"
+                tile = "water"
             elif r >= 2 and r <= 10:
                 tile = "rock"
             elif r > 10 and r < 16:
@@ -285,10 +274,9 @@ class World:
     def load_images(self):
 
         block = pg.image.load("assets/graphics/block.png").convert_alpha()
-        # read images
         building1 = pg.image.load("assets/graphics/building01.png").convert_alpha()
         building2 = pg.image.load("assets/graphics/building02.png").convert_alpha()
-        tree = pg.image.load("assets/graphics/tree.png").convert_alpha()
+        water = pg.image.load("assets/graphics/water.png").convert_alpha()
         rock = pg.image.load("assets/graphics/rock.png").convert_alpha()
         farm = pg.image.load("assets/graphics/farms.png").convert_alpha()
         building3 = pg.image.load("assets/graphics/building03.png").convert_alpha()
@@ -299,7 +287,7 @@ class World:
             "building2": building2,
             "building3": building3,
             "building4": building4,
-            "tree": tree,
+            "water": water,
             "rock": rock,
             "block": block,
             "farm" : farm,
@@ -308,39 +296,34 @@ class World:
 
         return images
     def create_world_from_image(self, image_path):
-        """Create a world based on a PNG image where different colors represent different tile types"""
-        # Load the image
+        
+        # Attempt to load the image and create the world, if null, use procedural map
         try:
             map_image = pg.image.load(image_path).convert()
         except:
             print(f"Failed to load image: {image_path}")
-            return self.create_world()  # Fall back to procedural generation
+            return self.create_world() 
         
-        # Resize image to match grid dimensions if needed
         map_image = pg.transform.scale(map_image, (self.grid_length_x, self.grid_length_y))
         
-        # Create world array
         world = []
         
-        # Define color mappings (RGB to tile type)
-        # You can customize these colors based on your needs
+        #color coded from png
         color_map = {
-            (0, 0, 255): "tree",       # Green for trees/forest
-            (255, 255, 0): "farm",     # Yellow for farms
-            (100, 50, 0): "rock",      # Brown for rocks
-            (255, 0, 0): "building1",  # Red for building1
-            (200, 0, 0): "building2",  # Dark red for building2
-            (150, 0, 0): "building3",  # Darker red for building3
-            (100, 0, 0): "building4",  # Very dark red for building4
-            (0, 0, 0): "train"         # Black for train stations
+            (0, 0, 255): "water",      
+            (255, 255, 0): "farm",     
+            (100, 50, 0): "rock",      
+            (255, 0, 0): "building1",  
+            (200, 0, 0): "building2",  
+            (150, 0, 0): "building3",  
+            (100, 0, 0): "building4",  
+            (0, 0, 0): "train"  
         }
         
-        # Process each pixel in the image
         for grid_x in range(self.grid_length_x):
             world.append([])
             for grid_y in range(self.grid_length_y):
-                # Get base tile data (for rendering positions etc.)
-                # Create a basic tile with default values
+
                 rect = [
                     (grid_x * TILE_SIZE, grid_y * TILE_SIZE),
                     (grid_x * TILE_SIZE + TILE_SIZE, grid_y * TILE_SIZE),
@@ -352,53 +335,49 @@ class World:
                 minx = min([x for x, y in iso_poly])
                 miny = min([y for x, y in iso_poly])
 
-                # Create the default world tile (just the block, nothing else)
                 world_tile = {
                     "grid": [grid_x, grid_y],
                     "cart_rect": rect,
                     "iso_poly": iso_poly,
                     "render_pos": [minx, miny],
-                    "tile": "",  # Default to empty
-                    "collision": False  # No collision by default
+                    "tile": "", 
+                    "collision": False 
                 }
                 
-                # Get pixel color at this grid position
+                # Get pixel color
                 try:
-                    pixel_color = map_image.get_at((grid_x, grid_y))[:3]  # Get RGB, ignore alpha
+                    pixel_color = map_image.get_at((grid_x, grid_y))[:3]
                 except IndexError:
-                    pixel_color = (255, 255, 255)  # Default white if out of bounds
+                    pixel_color = (255, 255, 255)  # Default white
                 
-                # Find closest color in our color map
+                #algorithm to get closests color from png
                 min_distance = float('inf')
                 matching_tile = ""
-                
                 for color, tile in color_map.items():
-                    # Calculate color distance (simple Euclidean in RGB space)
                     distance = sum((a - b) ** 2 for a, b in zip(color, pixel_color))
                     if distance < min_distance:
                         min_distance = distance
                         matching_tile = tile
-                
-                # Only use the mapped tile if it's a close enough match
-                if min_distance < 10000:  # Threshold for color matching
+                if min_distance < 10000: 
                     world_tile["tile"] = matching_tile
                     world_tile["collision"] = matching_tile != ""
                 
                 world[grid_x].append(world_tile)
                 
-                # Draw the grass tile (block) regardless
+                #default
                 render_pos = world_tile["render_pos"]
                 self.grass_tiles.blit(self.tiles["block"], 
                                     (render_pos[0] + self.grass_tiles.get_width()/2, render_pos[1]))
         
         return world
+    
+    
     def can_place_tile(self, grid_pos):
         mouse_on_panel = False
         for rect in [self.hud.resources_rect, self.hud.build_rect, self.hud.select_rect]:
             if rect.collidepoint(pg.mouse.get_pos()):
                 mouse_on_panel = True
         world_bounds = (0 <= grid_pos[0] <= self.grid_length_x) and (0 <= grid_pos[1] <= self.grid_length_x)
-
         if world_bounds and not mouse_on_panel:
             return True
         else:

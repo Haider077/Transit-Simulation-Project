@@ -11,14 +11,15 @@ class Hud:
         self.height = height
 
         self.hud_colour = (50, 50, 50, 255)
-        pg.font.init() # you have to call this at the start, 
-                        # if you want to use this module.
+        pg.font.init()
         my_font = pg.font.SysFont('monogram medium', 70)
-        my_font1 = pg.font.Font('../monogram.ttf', 70) #Load font object.
+        my_font1 = pg.font.Font('../monogram.ttf', 70)
         self.text_surface = my_font1.render('Building Menu', False, (255, 255, 255))
-        text = "  MINI-MAP :"
+        text = "  MINI-MAP :" #unimplemented
+
         text.splitlines()
         self.text_surface1 = my_font1.render(text, False, (255, 255, 255))
+
         # resouces hud
         self.resouces_surface = pg.Surface((width, height * 0.02), pg.SRCALPHA)
         self.resources_rect = self.resouces_surface.get_rect(topleft=(0, 0))
@@ -88,12 +89,9 @@ class Hud:
 
     def draw(self, screen):
 
-        # resouce hud
         screen.blit(self.resouces_surface, (0, 0))
-        # build hud
         screen.blit(self.build_surface, (self.width * 0.84, self.height * 0.74))
         screen.blit(self.instructions, (60, 60))
-
         screen.blit(self.text_surface, (self.width * 0.84, self.height * 0.74 - 60))
         screen.blit(self.text_surface1, (60, 60))
 
@@ -103,11 +101,10 @@ class Hud:
 
     def load_images(self):
 
-        # read images
-        building1 = pg.image.load("assets/graphics/building01.png")
-        building2 = pg.image.load("assets/graphics/building02.png")
-        tree = pg.image.load("assets/graphics/tree.png")
-        rock = pg.image.load("assets/graphics/rock.png")
+        # building1 = pg.image.load("assets/graphics/building01.png")
+        # building2 = pg.image.load("assets/graphics/building02.png")
+        # water = pg.image.load("assets/graphics/water.png")
+        # rock = pg.image.load("assets/graphics/rock.png")
         ts = pg.image.load("assets/graphics/trainStation.png")
 
         images = {
